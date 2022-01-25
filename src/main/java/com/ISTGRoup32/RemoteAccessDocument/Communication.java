@@ -29,6 +29,28 @@ public class Communication {
         this.documentDao = SpringUtils.getBean(DocumentDao.class);
     }
 
+    public void sendJson(JSONObject json) throws IOException, JSONException {
+        DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
+
+        System.out.println("Sending: \n" + json.toString(2));
+        out.write(json.toString().getBytes());
+        out.write('\n');
+        out.flush();
+    }
+
+    public JSONObject receiveJson() throws IOException, JSONException, RuntimeException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+        JSONObject json = new JSONObject(in.readLine());
+
+        System.out.println("Received: \n" + json.toString(2));
+
+        if (!Cryptography.verifyIntegrity(json))
+            throw new RuntimeException("Modified message received");
+
+        return json;
+    }
+
     public void handleClient() throws IOException, JSONException {
         clientSocket = this.serverSocket.accept();
         clientSocket.setTcpNoDelay(true);
@@ -84,28 +106,6 @@ public class Communication {
         }
 
         clientSocket.close();
-    }
-
-    public void sendJson(JSONObject json) throws IOException {
-        DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
-
-        System.out.println("Sending: " + json.toString());
-        out.write(json.toString().getBytes());
-        out.write('\n');
-        out.flush();
-    }
-
-    public JSONObject receiveJson() throws IOException, JSONException, RuntimeException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-
-        JSONObject json = new JSONObject(in.readLine());
-
-        System.out.println("Received: " + json.toString());
-
-        if (!Cryptography.verifyIntegrity(json))
-            throw new RuntimeException("Modified message received");
-
-        return json;
     }
 
 }
