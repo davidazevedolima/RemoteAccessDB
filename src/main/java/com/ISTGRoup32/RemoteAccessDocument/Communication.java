@@ -18,6 +18,7 @@ import java.util.List;
 public class Communication {
     private final ServerSocket serverSocket;
     private Socket clientSocket;
+    private Cryptography cryptography;
 
     UserDao userDao;
     DocumentDao documentDao;
@@ -94,12 +95,16 @@ public class Communication {
         out.flush();
     }
 
-    public JSONObject receiveJson() throws IOException, JSONException {
+    public JSONObject receiveJson() throws IOException, JSONException, RuntimeException {
         BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
         JSONObject json = new JSONObject(in.readLine());
 
         System.out.println("Received: " + json.toString());
+
+        if (!Cryptography.verifyIntegrity(json))
+            throw new RuntimeException("Modified message received");
+
         return json;
     }
 

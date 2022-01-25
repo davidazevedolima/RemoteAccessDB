@@ -14,21 +14,23 @@ import java.util.List;
 public class Json {
 
     public static JSONObject buildResponse(String status, JSONObject body) throws JSONException {
-        JSONObject request = new JSONObject();
+        JSONObject response = new JSONObject();
 
-        request.put("response", status);
-        request.put("body", body);
+        response.put("response", status);
+        response.put("body", body);
+        response.put("digest", Cryptography.encodeMessageDigest(response.toString().getBytes()));
 
-        return request;
+        return response;
     }
 
     public static JSONObject buildResponseArray(String status, JSONArray body) throws JSONException {
-        JSONObject request = new JSONObject();
+        JSONObject response = new JSONObject();
 
-        request.put("response", status);
-        request.put("body", body);
+        response.put("response", status);
+        response.put("body", body);
+        response.put("digest", Cryptography.encodeMessageDigest(response.toString().getBytes()));
 
-        return request;
+        return response;
     }
 
     public static JSONObject fromUser(User user) throws JSONException {

@@ -13,8 +13,13 @@ public class RemoteAccessDocumentApplication {
 		SpringApplication.run(RemoteAccessDocumentApplication.class, args);
 		System.out.println("Starting communications...");
 		Communication communication = new Communication(58032);
-		while (true)
-			communication.handleClient();
+		while (true) {
+			try {
+				communication.handleClient();
+			} catch (RuntimeException e) {
+				System.out.println(e.getMessage());
+			}
+		}
 	}
 
 }
