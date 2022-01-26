@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.SecureRandom;
 import java.util.List;
 
 public class Communication {
@@ -40,7 +41,6 @@ public class Communication {
 
     public JSONObject receiveJson() throws IOException, JSONException, RuntimeException {
         BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-
         JSONObject json = new JSONObject(in.readLine());
 
         System.out.println("Received: \n" + json.toString(2));
@@ -51,12 +51,32 @@ public class Communication {
         return json;
     }
 
-    public void handleClient() throws IOException, JSONException {
+    public Long handshake() throws JSONException, IOException {
+        JSONObject jsonIn = receiveJson();
+        String request = jsonIn.getString("request");
+
+        if (!request.equals("handshake"))
+            throw new RuntimeException("Client request without handshake");
+
+        SecureRandom secureRandom = new SecureRandom();
+        Long seq = secureRandom.nextLong();
+
+        sendJson(Json.buildResponse("ok", null, seq));
+        return seq + 1;
+    }
+
+    public void handleClient() throws IOException, JSONException, RuntimeException {
         clientSocket = this.serverSocket.accept();
         clientSocket.setTcpNoDelay(true);
 
         System.out.println("Handling client...");
+        Long seq = handshake();
+
         JSONObject jsonIn = receiveJson();
+
+        Cryptography.verifySequence(jsonIn.getLong("seq"), seq);
+        seq += 1;
+
         String request = jsonIn.getString("request");
         JSONObject body;
 
@@ -69,14 +89,15 @@ public class Communication {
                 body = jsonIn.getJSONObject("body");
                 user = userDao.verifyCredentials(Json.toUser(body));
                 if (user == null)
-                    jsonOut = Json.buildResponse("nok", null);
+                    jsonOut = Json.buildResponse("nok", null, seq);
                 else
-                    jsonOut = Json.buildResponse("ok", Json.fromUser(user));
+                    jsonOut = Json.buildResponse("ok", Json.fromUser(user), seq);
                 sendJson(jsonOut);
                 break;
+
             case "listUsers":
                 List<User> users = userDao.getUsers();
-                jsonOut = Json.buildResponseArray("ok", Json.fromUserList(users));
+                jsonOut = Json.buildResponseArray("ok", Json.fromUserList(users), seq);
                 sendJson(jsonOut);
                 break;
 
@@ -94,7 +115,7 @@ public class Communication {
 
             case "listDocuments":
                 List<Document> documents = documentDao.getDocuments();
-                jsonOut = Json.buildResponseArray("ok", Json.fromDocumentList(documents));
+                jsonOut = Json.buildResponseArray("ok", Json.fromDocumentList(documents), seq);
                 sendJson(jsonOut);
                 break;
 

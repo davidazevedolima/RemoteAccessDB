@@ -70,4 +70,9 @@ public class Cryptography {
 
         return Arrays.equals(md, verifyMd);
     }
+
+    public static void verifySequence(long seq1, long seq2) throws RuntimeException {
+        if (seq1 != seq2)
+            throw new RuntimeException("Sequence numbers don't match");
+    }
 }
