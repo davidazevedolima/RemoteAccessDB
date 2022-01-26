@@ -13,7 +13,7 @@ public class Document {
     private Long id;
     @Column(name = "title")
     private String title;
-    @Column(name = "content")
+    @Column(name = "content", columnDefinition="TEXT")
     private String content;
 
     public void setId(Long id) {

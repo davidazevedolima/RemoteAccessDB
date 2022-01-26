@@ -22,7 +22,6 @@ public class User {
     @Column(name = "password")
     private String password;
 
-
     public void setId(Long id) {
         this.id = id;
     }
