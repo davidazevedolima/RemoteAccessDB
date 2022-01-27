@@ -13,10 +13,10 @@ import java.util.List;
 
 public class Json {
 
-    public static JSONObject buildResponse(String status, JSONObject body, Long seq) throws JSONException {
+    public static JSONObject buildResponse(String head, JSONObject body, Long seq) throws JSONException {
         JSONObject response = new JSONObject();
 
-        response.put("response", status);
+        response.put("response", head);
         response.put("body", body);
         response.put("seq", seq);
 
@@ -25,16 +25,33 @@ public class Json {
         return response;
     }
 
-    public static JSONObject buildResponseArray(String status, JSONArray body, Long seq) throws JSONException {
+    public static JSONObject buildResponseArray(String head, JSONArray body, Long seq) throws JSONException {
         JSONObject response = new JSONObject();
 
-        response.put("response", status);
+        response.put("response", head);
         response.put("body", body);
         response.put("seq", seq);
 
         response.put("digest", Cryptography.encodeMessageDigest(response.toString().getBytes()));
 
         return response;
+    }
+
+    public static JSONObject buildEncryptedMessage(byte[] encrypted, byte[] iv) throws JSONException {
+        JSONObject message = new JSONObject();
+
+        message.put("message", Cryptography.toBase64(encrypted));
+        message.put("iv", Cryptography.toBase64(iv));
+
+        return message;
+    }
+
+    public static byte[] getEncryptedMessage(JSONObject json) throws JSONException {
+        return Cryptography.fromBase64(json.getString("message"));
+    }
+
+    public static byte[] getIV(JSONObject json) throws JSONException {
+        return Cryptography.fromBase64(json.getString("iv"));
     }
 
     public static JSONObject fromUser(User user) throws JSONException {

@@ -38,11 +38,12 @@ public class DH {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         JSONObject message = new JSONObject(in.readLine());
+
         System.out.println("Received: \n" + message.toString(2));
+
         if (!signature.verifySignature(message)) {
             throw new RuntimeException("Signature verification failed");
         }
-
 
         return message.getString("pub_key");
     }

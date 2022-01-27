@@ -24,8 +24,7 @@ import java.util.List;
 public class Communication {
     private final ServerSocket serverSocket;
     private Socket clientSocket;
-    private Cryptography cryptography;
-    private DigitalSignature digitalSignature;
+    private byte[] sharedSecret;
 
     UserDao userDao;
     DocumentDao documentDao;
@@ -34,28 +33,55 @@ public class Communication {
         this.serverSocket = new ServerSocket(port);
         this.userDao = SpringUtils.getBean(UserDao.class);
         this.documentDao = SpringUtils.getBean(DocumentDao.class);
-        this.digitalSignature = new DigitalSignature();
     }
 
-    public void sendJson(JSONObject json) throws IOException, JSONException {
-        DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
+    public void sendJson(JSONObject json) {
+        try {
+            DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
 
-        System.out.println("Sending: \n" + json.toString(2));
-        out.write(json.toString().getBytes());
-        out.write('\n');
-        out.flush();
+            System.out.println("Sending: \n" + json.toString(2));
+
+            AES aes = new AES(this.sharedSecret);
+            byte[] iv = aes.generateIV();
+            JSONObject message = Json.buildEncryptedMessage(
+                    aes.cipher(json.toString().getBytes(), iv),
+                    iv);
+
+            System.out.println("Sending Encrypted: \n" + message.toString(2));
+
+            out.write(message.toString().getBytes());
+            out.write('\n');
+            out.flush();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
-    public JSONObject receiveJson() throws IOException, JSONException, RuntimeException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        JSONObject json = new JSONObject(in.readLine());
+    public JSONObject receiveJson() throws RuntimeException {
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-        System.out.println("Received: \n" + json.toString(2));
+            JSONObject json = new JSONObject(in.readLine());
 
-        if (!Cryptography.verifyIntegrity(json))
-            throw new RuntimeException("Modified message received");
+            System.out.println("Received Encrypted: \n" + json.toString(2));
 
-        return json;
+            byte[] encryptedMessage = Json.getEncryptedMessage(json);
+            byte[] iv = Json.getIV(json);
+
+            AES aes = new AES(this.sharedSecret);
+
+            String message = new String(aes.decipher(encryptedMessage, iv));
+            json = new JSONObject(message);
+
+            System.out.println("Received: \n" + json.toString(2));
+
+            if (!Cryptography.verifyIntegrity(json))
+                throw new RuntimeException("Modified message received");
+
+            return json;
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
     public Long handshake() throws JSONException, IOException {
@@ -78,7 +104,8 @@ public class Communication {
 
         System.out.println("Handling client...");
 
-        byte[] sharedSecret = DH.DHKeyExchange(clientSocket);
+        this.sharedSecret = DH.DHKeyExchange(clientSocket);
+
         Long seq = handshake();
 
         JSONObject jsonIn = receiveJson();
