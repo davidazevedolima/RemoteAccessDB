@@ -7,27 +7,34 @@ import com.ISTGRoup32.RemoteAccessDocument.models.User;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.SecureRandom;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 
 public class Communication {
     private final ServerSocket serverSocket;
     private Socket clientSocket;
     private Cryptography cryptography;
+    private DigitalSignature digitalSignature;
 
     UserDao userDao;
     DocumentDao documentDao;
 
-    public Communication(int port) throws IOException {
+    public Communication(int port) throws IOException, UnrecoverableKeyException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         this.serverSocket = new ServerSocket(port);
         this.userDao = SpringUtils.getBean(UserDao.class);
         this.documentDao = SpringUtils.getBean(DocumentDao.class);
+        this.digitalSignature = new DigitalSignature();
     }
 
     public void sendJson(JSONObject json) throws IOException, JSONException {
@@ -65,11 +72,13 @@ public class Communication {
         return seq + 1;
     }
 
-    public void handleClient() throws IOException, JSONException, RuntimeException {
+    public void handleClient() throws IOException, JSONException, RuntimeException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, UnrecoverableKeyException, NoSuchPaddingException, IllegalBlockSizeException, CertificateException, KeyStoreException, BadPaddingException {
         clientSocket = this.serverSocket.accept();
         clientSocket.setTcpNoDelay(true);
 
         System.out.println("Handling client...");
+
+        byte[] sharedSecret = DH.DHKeyExchange(clientSocket);
         Long seq = handshake();
 
         JSONObject jsonIn = receiveJson();
