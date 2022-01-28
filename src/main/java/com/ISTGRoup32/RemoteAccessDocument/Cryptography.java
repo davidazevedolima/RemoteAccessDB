@@ -10,7 +10,7 @@ import java.util.Base64;
 
 public class Cryptography {
 
-    public static String encodeMessageDigest(byte[] message) {
+    public static String encodeMessageDigest(byte[] message) throws RuntimeException {
         try {
             byte[] md = MessageDigest.getInstance("SHA-256").digest(message);
 
@@ -32,7 +32,7 @@ public class Cryptography {
         return Base64.getDecoder().decode(b64md);
     }
 
-    public static boolean verifyIntegrity(JSONObject message) {
+    public static boolean verifyIntegrity(JSONObject message) throws RuntimeException {
         try {
             String b64md = message.getString("digest");
             message.remove("digest");

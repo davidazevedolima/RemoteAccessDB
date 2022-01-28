@@ -13,7 +13,7 @@ import java.util.List;
 
 public class Json {
 
-    public static JSONObject buildResponse(String head, JSONObject body, Long seq) {
+    public static JSONObject buildResponse(String head, JSONObject body, Long seq) throws RuntimeException {
         try {
             JSONObject response = new JSONObject();
 
@@ -29,7 +29,7 @@ public class Json {
         }
     }
 
-    public static JSONObject buildResponseArray(String head, JSONArray body, Long seq) {
+    public static JSONObject buildResponseArray(String head, JSONArray body, Long seq) throws RuntimeException {
         try {
             JSONObject response = new JSONObject();
 
@@ -45,7 +45,7 @@ public class Json {
         }
     }
 
-    public static JSONObject buildEncryptedMessage(byte[] encrypted, byte[] iv) {
+    public static JSONObject buildEncryptedMessage(byte[] encrypted, byte[] iv) throws RuntimeException {
         try {
             JSONObject message = new JSONObject();
 
@@ -58,7 +58,7 @@ public class Json {
         }
     }
 
-    public static byte[] getEncryptedMessage(JSONObject json) {
+    public static byte[] getEncryptedMessage(JSONObject json) throws RuntimeException {
         try {
             return Cryptography.fromBase64(json.getString("message"));
         } catch (JSONException e) {
@@ -66,7 +66,7 @@ public class Json {
         }
     }
 
-    public static byte[] getIV(JSONObject json) {
+    public static byte[] getIV(JSONObject json) throws RuntimeException {
         try {
             return Cryptography.fromBase64(json.getString("iv"));
         } catch (JSONException e) {
@@ -74,7 +74,7 @@ public class Json {
         }
     }
 
-    public static JSONObject fromUser(User user) {
+    public static JSONObject fromUser(User user) throws RuntimeException {
         try {
             Gson gson = new Gson();
             String jsonUser = gson.toJson(user);
@@ -106,7 +106,7 @@ public class Json {
         return gson.fromJson(jsonArray.toString(), type);
     }
 
-    public static JSONObject fromDocument(Document document) {
+    public static JSONObject fromDocument(Document document) throws RuntimeException {
         try {
             Gson gson = new Gson();
             String jsonDocument = gson.toJson(document);

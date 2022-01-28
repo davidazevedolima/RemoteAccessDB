@@ -66,5 +66,4 @@ public class AES {
 
         return iv;
     }
-
 }
