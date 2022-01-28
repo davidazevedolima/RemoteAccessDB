@@ -4,6 +4,7 @@ import com.ISTGRoup32.RemoteAccessDocument.dao.DocumentDao;
 import com.ISTGRoup32.RemoteAccessDocument.dao.UserDao;
 import com.ISTGRoup32.RemoteAccessDocument.models.Document;
 import com.ISTGRoup32.RemoteAccessDocument.models.User;
+import com.ISTGRoup32.RemoteAccessDocument.models.UserDocument;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -86,8 +87,8 @@ public class Communication {
             throw new RuntimeException("Error creating JSON");
         }
     }
-
-    public Long handshake() {
+  
+  public Long handshake() {
         try {
             JSONObject jsonIn = receiveJson();
             String request = jsonIn.getString("request");
@@ -105,77 +106,129 @@ public class Communication {
         }
     }
 
-    public void handleClient() {
-        try {
-            clientSocket = this.serverSocket.accept();
-            clientSocket.setTcpNoDelay(true);
 
-            System.out.println("Handling client...");
+    public void handleClient() throws IOException, JSONException, RuntimeException {
+        clientSocket = this.serverSocket.accept();
+        clientSocket.setTcpNoDelay(true);
 
-            this.sharedSecret = DH.DHKeyExchange(clientSocket);
+        System.out.println("Handling client...");
+        
+        this.sharedSecret = DH.DHKeyExchange(clientSocket);
+  
+        Long seq = handshake();
 
-            Long seq = handshake();
+        JSONObject jsonIn = receiveJson();
 
-            JSONObject jsonIn = receiveJson();
+        Cryptography.verifySequence(jsonIn.getLong("seq"), seq);
+        seq += 1;
 
-            Cryptography.verifySequence(jsonIn.getLong("seq"), seq);
-            seq += 1;
+        String request = jsonIn.getString("request");
+        JSONObject body;
 
-            String request = jsonIn.getString("request");
-            JSONObject body;
+        JSONObject jsonOut;
+        User user;
+        Long id;
+        Long docId;
 
-            JSONObject jsonOut;
-            User user;
-            Long id;
+        switch (request) {
+            case "login":
+                body = jsonIn.getJSONObject("body");
+                user = userDao.verifyCredentials(Json.toUser(body));
+                if (user == null)
+                    jsonOut = Json.buildResponse("nok", null, seq);
+                else
+                    jsonOut = Json.buildResponse("ok", Json.fromUser(user), seq);
+                sendJson(jsonOut);
+                break;
+            case "isUserInDB":
+                body = jsonIn.getJSONObject("body");
+                id = body.getLong("userId");
+                user = userDao.isUserInDB(id);
+                if (user == null)
+                    jsonOut = Json.buildResponse("nok", null, seq);
+                else
+                    jsonOut = Json.buildResponse("ok", Json.fromUser(user), seq);
+                sendJson(jsonOut);
+                break;
+            case "getUserPermissions":
+                body = jsonIn.getJSONObject("body");
+                docId = body.getLong("docId");
+                id = body.getLong("userId");
+                UserDocument userDocument = userDao.getUserPermissions(id, docId);
+                if (userDocument == null)
+                    jsonOut = Json.buildResponse("nok", null, seq);
+                else
+                    jsonOut = Json.buildResponse("ok", Json.fromUserDocument(userDocument), seq);
+                sendJson(jsonOut);
+                break;
 
-            switch (request) {
-                case "login":
-                    body = jsonIn.getJSONObject("body");
-                    user = userDao.verifyCredentials(Json.toUser(body));
-                    if (user == null)
-                        jsonOut = Json.buildResponse("nok", null, seq);
-                    else
-                        jsonOut = Json.buildResponse("ok", Json.fromUser(user), seq);
-                    sendJson(jsonOut);
-                    break;
+            case "listUsers":
+                List<User> users = userDao.getUsers();
+                jsonOut = Json.buildResponseArray("ok", Json.fromUserList(users), seq);
+                sendJson(jsonOut);
+                break;
 
-                case "listUsers":
-                    List<User> users = userDao.getUsers();
-                    jsonOut = Json.buildResponseArray("ok", Json.fromUserList(users), seq);
-                    sendJson(jsonOut);
-                    break;
+            case "registerUser":
+                body = jsonIn.getJSONObject("body");
+                user = Json.toUser(body);
+                userDao.register(user);
+                break;
 
-                case "registerUser":
-                    body = jsonIn.getJSONObject("body");
-                    user = Json.toUser(body);
-                    userDao.register(user);
-                    break;
+            case "deleteUser":
+                body = jsonIn.getJSONObject("body");
+                id = body.getLong("id");
+                userDao.deleteUser(id);
+                break;
 
-                case "deleteUser":
-                    body = jsonIn.getJSONObject("body");
-                    id = body.getLong("id");
-                    userDao.deleteUser(id);
-                    break;
+            case "listDocuments":
+                body = jsonIn.getJSONObject("body");
+                id = body.getLong("userId");
+                List<Document> documents = documentDao.getDocuments(id);
+                jsonOut = Json.buildResponseArray("ok", Json.fromDocumentList(documents), seq);
+                sendJson(jsonOut);
+                break;
 
-                case "listDocuments":
-                    List<Document> documents = documentDao.getDocuments();
-                    jsonOut = Json.buildResponseArray("ok", Json.fromDocumentList(documents), seq);
-                    sendJson(jsonOut);
-                    break;
+            case "deleteDocument":
+                body = jsonIn.getJSONObject("body");
+                id = body.getLong("id");
+                String documentDeleted = documentDao.deleteDocument(id);
+                jsonOut = Json.buildResponse("ok", Json.fromsString(documentDeleted), seq);
+                sendJson(jsonOut);
+                break;
 
-                case "deleteDocument":
-                    body = jsonIn.getJSONObject("body");
-                    id = body.getLong("id");
-                    documentDao.deleteDocument(id);
-                    break;
-            }
+            case "getDocument":
+                body = jsonIn.getJSONObject("body");
+                id = body.getLong("id");
+                Document document = documentDao.getDocument(id);
+                jsonOut = Json.buildResponse("ok", Json.fromDocument(document), seq);
+                sendJson(jsonOut);
+                break;
 
-            clientSocket.close();
-        } catch (IOException e) {
-            throw new RuntimeException("I/O error occurred");
-        } catch (JSONException e) {
-            throw new RuntimeException("No such mapping exists in JSON");
-        }
-    }
+            case "newDocument":
+                body = jsonIn.getJSONObject("body");
+                Long ownerId = body.getLong("ownerId");
+                Document newDocument = documentDao.newDocument(ownerId);
+                jsonOut = Json.buildResponse("ok", Json.fromDocument(newDocument), seq);
+                sendJson(jsonOut);
+                break;
 
+            case "shareDocument":
+                body = jsonIn.getJSONObject("body");
+                docId = body.getLong("docId");
+                String username = body.getString("username");
+                String documentShared = documentDao.shareDocument(docId, username);
+                jsonOut = Json.buildResponse("ok", Json.fromsString(documentShared), seq);
+                sendJson(jsonOut);
+                break;
+
+            case "saveDocument":
+                body = jsonIn.getJSONObject("body");
+                docId = body.getLong("docId");
+                String title = body.getString("title");
+                String content = body.getString("content");
+                System.out.println(docId+title+content);
+                String documentSaved = documentDao.saveDocument(docId, title, content);
+                jsonOut = Json.buildResponse("ok", Json.fromsString(documentSaved), seq);
+                sendJson(jsonOut);
+                break;
 }

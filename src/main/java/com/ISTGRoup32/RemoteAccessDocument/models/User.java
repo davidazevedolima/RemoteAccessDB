@@ -3,6 +3,8 @@ package com.ISTGRoup32.RemoteAccessDocument.models;
 import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users", uniqueConstraints = @UniqueConstraint(columnNames = "username"))
@@ -21,7 +23,6 @@ public class User {
     private String username;
     @Column(name = "password")
     private String password;
-
 
     public void setId(Long id) {
         this.id = id;

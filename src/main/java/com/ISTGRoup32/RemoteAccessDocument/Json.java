@@ -2,6 +2,7 @@ package com.ISTGRoup32.RemoteAccessDocument;
 
 import com.ISTGRoup32.RemoteAccessDocument.models.Document;
 import com.ISTGRoup32.RemoteAccessDocument.models.User;
+import com.ISTGRoup32.RemoteAccessDocument.models.UserDocument;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.json.JSONArray;
@@ -136,5 +137,24 @@ public class Json {
         Type type = new TypeToken<List<Document>>(){}.getType();
 
         return gson.fromJson(jsonArray.toString(), type);
+    }
+
+    public static UserDocument toUserDocument(JSONObject jsonObject) {
+        Gson gson = new Gson();
+
+        return gson.fromJson(jsonObject.toString(), UserDocument.class);
+    }
+
+    public static JSONObject fromUserDocument(UserDocument userDocument) throws JSONException {
+        Gson gson = new Gson();
+        String jsonUser = gson.toJson(userDocument);
+
+        return new JSONObject(jsonUser);
+    }
+
+    public static JSONObject fromsString(String documentShared) throws JSONException {
+        JSONObject jsonDocumentShared = new JSONObject();
+        jsonDocumentShared.put("response", documentShared);
+        return jsonDocumentShared;
     }
 }

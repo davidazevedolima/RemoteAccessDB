@@ -1,6 +1,7 @@
 package com.ISTGRoup32.RemoteAccessDocument.dao;
 
 import com.ISTGRoup32.RemoteAccessDocument.models.User;
+import com.ISTGRoup32.RemoteAccessDocument.models.UserDocument;
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import org.springframework.stereotype.Repository;
@@ -50,5 +51,31 @@ public class UserDaoImpl implements UserDao{
         if(argon2.verify(hashedPassword, user.getPassword().toCharArray()))
             return resultList.get(0);
         else return null;
+    }
+
+    @Override
+    public User isUserInDB(Long id) {
+        String queryString = "FROM User WHERE id = :id";
+        Query query = entityManager.createQuery(queryString).setParameter("id", id);
+        List<User> resultList = query.getResultList();
+
+        //If there is not a user with "username" and "password" in the database return false
+        if (resultList.isEmpty())
+            return null;
+        else
+            return resultList.get(0);
+    }
+
+    @Override
+    public UserDocument getUserPermissions(Long userId, Long dicId) {
+        String queryString = "FROM UserDocument WHERE userId = :userId AND documentId = :docId";
+        Query query = entityManager.createQuery(queryString).setParameter("userId", userId).setParameter("docId", dicId);
+        List<UserDocument> resultList = query.getResultList();
+
+        //If there is not a user with "username" and "password" in the database return false
+        if (resultList.isEmpty())
+            return null;
+        else
+            return resultList.get(0);
     }
 }
