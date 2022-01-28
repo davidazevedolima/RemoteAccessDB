@@ -18,6 +18,8 @@ public class RemoteAccessDocumentApplication {
 		SpringApplication.run(RemoteAccessDocumentApplication.class, args);
 		System.out.println("Starting communications...");
 		Communication communication = new Communication(port);
+		BackUp thread = new BackUp(communication);
+		thread.start();
 		while (true) {
 			try {
 				communication.handleClient();
