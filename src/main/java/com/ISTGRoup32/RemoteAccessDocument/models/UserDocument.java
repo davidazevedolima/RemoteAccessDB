@@ -26,4 +26,28 @@ public class UserDocument {
     public void setId(Long id) {
         this.id = id;
     }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public Long getDocumentId() {
+        return documentId;
+    }
+
+    public boolean isOwner() {
+        return owner;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public void setDocumentId(Long documentId) {
+        this.documentId = documentId;
+    }
+
+    public void setOwner(boolean owner) {
+        this.owner = owner;
+    }
 }

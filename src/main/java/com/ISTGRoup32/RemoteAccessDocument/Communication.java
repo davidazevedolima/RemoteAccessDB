@@ -83,6 +83,7 @@ public class Communication {
         JSONObject jsonOut;
         User user;
         Long id;
+        Long docId;
 
         switch (request) {
             case "login":
@@ -114,7 +115,9 @@ public class Communication {
                 break;
 
             case "listDocuments":
-                List<Document> documents = documentDao.getDocuments();
+                body = jsonIn.getJSONObject("body");
+                id = body.getLong("userId");
+                List<Document> documents = documentDao.getDocuments(id);
                 jsonOut = Json.buildResponseArray("ok", Json.fromDocumentList(documents), seq);
                 sendJson(jsonOut);
                 break;
@@ -123,6 +126,38 @@ public class Communication {
                 body = jsonIn.getJSONObject("body");
                 id = body.getLong("id");
                 documentDao.deleteDocument(id);
+                break;
+
+            case "getDocument":
+                body = jsonIn.getJSONObject("body");
+                id = body.getLong("id");
+                Document document = documentDao.getDocument(id);
+                jsonOut = Json.buildResponse("ok", Json.fromDocument(document), seq);
+                sendJson(jsonOut);
+                break;
+
+            case "newDocument":
+                body = jsonIn.getJSONObject("body");
+                Long ownerId = body.getLong("ownerId");
+                Document newDocument = documentDao.newDocument(ownerId);
+                jsonOut = Json.buildResponse("ok", Json.fromDocument(newDocument), seq);
+                sendJson(jsonOut);
+                break;
+
+            case "shareDocument":
+                body = jsonIn.getJSONObject("body");
+                docId = body.getLong("docId");
+                String username = body.getString("username");
+                documentDao.shareDocument(docId, username);
+                break;
+
+            case "saveDocument":
+                body = jsonIn.getJSONObject("body");
+                docId = body.getLong("docId");
+                String title = body.getString("title");
+                String content = body.getString("content");
+                System.out.println(docId+title+content);
+                documentDao.saveDocument(docId, title, content);
                 break;
         }
 
