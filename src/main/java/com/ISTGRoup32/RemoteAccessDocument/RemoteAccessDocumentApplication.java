@@ -1,18 +1,23 @@
 package com.ISTGRoup32.RemoteAccessDocument;
 
-import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import java.io.IOException;
 
 @SpringBootApplication
 public class RemoteAccessDocumentApplication {
 
-	public static void main(String[] args) throws IOException, JSONException {
+	private static int port;
+
+	@Value("${communication.port}")
+	public void setPort(int port) {
+		RemoteAccessDocumentApplication.port = port;
+	}
+
+	public static void main(String[] args) {
 		SpringApplication.run(RemoteAccessDocumentApplication.class, args);
 		System.out.println("Starting communications...");
-		Communication communication = new Communication(58032);
+		Communication communication = new Communication(port);
 		BackUp thread = new BackUp(communication);
 		thread.start();
 		while (true) {
