@@ -145,16 +145,24 @@ public class Json {
         return gson.fromJson(jsonObject.toString(), UserDocument.class);
     }
 
-    public static JSONObject fromUserDocument(UserDocument userDocument) throws JSONException {
-        Gson gson = new Gson();
-        String jsonUser = gson.toJson(userDocument);
+    public static JSONObject fromUserDocument(UserDocument userDocument) throws RuntimeException {
+        try {
+            Gson gson = new Gson();
+            String jsonUser = gson.toJson(userDocument);
 
-        return new JSONObject(jsonUser);
+            return new JSONObject(jsonUser);
+        } catch (JSONException e) {
+            throw new RuntimeException("Error creating JSON from UserDocument");
+        }
     }
 
-    public static JSONObject fromsString(String documentShared) throws JSONException {
-        JSONObject jsonDocumentShared = new JSONObject();
-        jsonDocumentShared.put("response", documentShared);
-        return jsonDocumentShared;
+    public static JSONObject fromsString(String documentShared) throws RuntimeException {
+        try {
+            JSONObject jsonDocumentShared = new JSONObject();
+            jsonDocumentShared.put("response", documentShared);
+            return jsonDocumentShared;
+        } catch (JSONException e) {
+            throw new RuntimeException("Error creating UserDocument from JSON");
+        }
     }
 }
