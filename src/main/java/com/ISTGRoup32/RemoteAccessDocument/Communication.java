@@ -4,6 +4,7 @@ import com.ISTGRoup32.RemoteAccessDocument.dao.DocumentDao;
 import com.ISTGRoup32.RemoteAccessDocument.dao.UserDao;
 import com.ISTGRoup32.RemoteAccessDocument.models.Document;
 import com.ISTGRoup32.RemoteAccessDocument.models.User;
+import com.ISTGRoup32.RemoteAccessDocument.models.UserDocument;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -93,6 +94,27 @@ public class Communication {
                     jsonOut = Json.buildResponse("nok", null, seq);
                 else
                     jsonOut = Json.buildResponse("ok", Json.fromUser(user), seq);
+                sendJson(jsonOut);
+                break;
+            case "isUserInDB":
+                body = jsonIn.getJSONObject("body");
+                id = body.getLong("userId");
+                user = userDao.isUserInDB(id);
+                if (user == null)
+                    jsonOut = Json.buildResponse("nok", null, seq);
+                else
+                    jsonOut = Json.buildResponse("ok", Json.fromUser(user), seq);
+                sendJson(jsonOut);
+                break;
+            case "getUserPermissions":
+                body = jsonIn.getJSONObject("body");
+                docId = body.getLong("docId");
+                id = body.getLong("userId");
+                UserDocument userDocument = userDao.getUserPermissions(id, docId);
+                if (userDocument == null)
+                    jsonOut = Json.buildResponse("nok", null, seq);
+                else
+                    jsonOut = Json.buildResponse("ok", Json.fromUserDocument(userDocument), seq);
                 sendJson(jsonOut);
                 break;
 
