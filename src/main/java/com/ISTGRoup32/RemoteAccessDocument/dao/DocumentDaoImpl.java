@@ -27,9 +27,13 @@ public class DocumentDaoImpl implements DocumentDao{
     }
 
     @Override
-    public void deleteDocument(Long id) {
+    public String deleteDocument(Long id) {
         Document document = entityManager.find(Document.class, id);
         entityManager.remove(document);
+        document = entityManager.find(Document.class, id);
+        if(document == null)
+            return "SUCCESS";
+        else return "FAIL";
     }
 
     @Override
@@ -58,28 +62,36 @@ public class DocumentDaoImpl implements DocumentDao{
     }
 
     @Override
-    public void shareDocument(Long docId, String username) {
+    public String shareDocument(Long docId, String username) {
 
         String queryString = "FROM User WHERE username = :username";
         Query query = entityManager.createQuery(queryString).setParameter("username", username);
         List<User> resultList = query.getResultList();
+        if (resultList.isEmpty())
+            return "FAIL";
 
         UserDocument newUserDocument = new UserDocument();
         newUserDocument.setUserId(resultList.get(0).getId());
         newUserDocument.setDocumentId(docId);
         newUserDocument.setOwner(false);
 
-        entityManager.merge(newUserDocument);
+        UserDocument documentShared = entityManager.merge(newUserDocument);
+        if(documentShared != null)
+            return "SUCCESS";
+        else return "FAIL";
     }
 
     @Override
-    public void saveDocument(Long docId, String title, String content) {
+    public String saveDocument(Long docId, String title, String content) {
         String queryString = "UPDATE documents SET title = :title , content = :content WHERE id = :docId";
         Query query = entityManager.createNativeQuery(queryString)
                 .setParameter("title", title)
                 .setParameter("content", content)
                 .setParameter("docId", docId);
-        query.executeUpdate();
+        int documentSaved = query.executeUpdate();
+        if(documentSaved == 1)
+            return "SUCCESS";
+        else return "FAIL";
     }
 
 }

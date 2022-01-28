@@ -108,4 +108,10 @@ public class Json {
 
         return new JSONObject(jsonUser);
     }
+
+    public static JSONObject fromsString(String documentShared) throws JSONException {
+        JSONObject jsonDocumentShared = new JSONObject();
+        jsonDocumentShared.put("response", documentShared);
+        return jsonDocumentShared;
+    }
 }

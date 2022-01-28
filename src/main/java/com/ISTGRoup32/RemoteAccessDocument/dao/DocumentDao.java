@@ -7,13 +7,13 @@ import java.util.List;
 public interface DocumentDao {
     List<Document> getDocuments(Long userId);
 
-    void deleteDocument(Long id);
+    String deleteDocument(Long id);
 
     Document getDocument(Long id);
 
     Document newDocument(Long ownerId);
 
-    void shareDocument(Long docId, String username);
+    String shareDocument(Long docId, String username);
 
-    void saveDocument(Long docId, String title, String content);
+    String saveDocument(Long docId, String title, String content);
 }

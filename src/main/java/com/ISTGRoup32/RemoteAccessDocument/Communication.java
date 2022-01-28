@@ -147,7 +147,9 @@ public class Communication {
             case "deleteDocument":
                 body = jsonIn.getJSONObject("body");
                 id = body.getLong("id");
-                documentDao.deleteDocument(id);
+                String documentDeleted = documentDao.deleteDocument(id);
+                jsonOut = Json.buildResponse("ok", Json.fromsString(documentDeleted), seq);
+                sendJson(jsonOut);
                 break;
 
             case "getDocument":
@@ -170,7 +172,9 @@ public class Communication {
                 body = jsonIn.getJSONObject("body");
                 docId = body.getLong("docId");
                 String username = body.getString("username");
-                documentDao.shareDocument(docId, username);
+                String documentShared = documentDao.shareDocument(docId, username);
+                jsonOut = Json.buildResponse("ok", Json.fromsString(documentShared), seq);
+                sendJson(jsonOut);
                 break;
 
             case "saveDocument":
@@ -179,7 +183,9 @@ public class Communication {
                 String title = body.getString("title");
                 String content = body.getString("content");
                 System.out.println(docId+title+content);
-                documentDao.saveDocument(docId, title, content);
+                String documentSaved = documentDao.saveDocument(docId, title, content);
+                jsonOut = Json.buildResponse("ok", Json.fromsString(documentSaved), seq);
+                sendJson(jsonOut);
                 break;
         }
 
