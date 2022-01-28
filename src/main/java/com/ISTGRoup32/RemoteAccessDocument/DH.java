@@ -3,79 +3,95 @@ package com.ISTGRoup32.RemoteAccessDocument;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyAgreement;
-import javax.crypto.NoSuchPaddingException;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.security.*;
-import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 
 public class DH {
-    public static void sendKey(Socket clientSocket, String b64key) throws JSONException, IOException, UnrecoverableKeyException, CertificateException, KeyStoreException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
-        DigitalSignature signature = new DigitalSignature();
+    public static void sendKey(Socket clientSocket, String b64key) throws RuntimeException {
+        try {
+            DigitalSignature signature = new DigitalSignature();
 
-        DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
+            DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
 
-        JSONObject message = new JSONObject();
-        message.put("pub_key", b64key);
-        message.put("signature", signature.signMessage(message.toString().getBytes()));
+            JSONObject message = new JSONObject();
+            message.put("pub_key", b64key);
+            message.put("signature", signature.signMessage(message.toString().getBytes()));
 
-        System.out.println("Sending: \n" + message.toString(2));
-        out.write(message.toString().getBytes());
-        out.write('\n');
-        out.flush();
-    }
-
-    public static String receiveKey(Socket clientSocket) throws IOException, JSONException, UnrecoverableKeyException, CertificateException, KeyStoreException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
-        DigitalSignature signature = new DigitalSignature();
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        JSONObject message = new JSONObject(in.readLine());
-
-        System.out.println("Received: \n" + message.toString(2));
-
-        if (!signature.verifySignature(message)) {
-            throw new RuntimeException("Signature verification failed");
+            System.out.println("Sending: \n" + message.toString(2));
+            out.write(message.toString().getBytes());
+            out.write('\n');
+            out.flush();
+        } catch (IOException e) {
+            throw new RuntimeException("I/O error occurred");
+        } catch (JSONException e) {
+            throw new RuntimeException("Error creating JSON");
         }
-
-        return message.getString("pub_key");
     }
 
-    public static byte[] DHKeyExchange(Socket clientSocket) throws NoSuchAlgorithmException, InvalidKeyException, JSONException, IOException, InvalidKeySpecException, UnrecoverableKeyException, NoSuchPaddingException, IllegalBlockSizeException, CertificateException, KeyStoreException, BadPaddingException {
-        // Create DH key pair
-        KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("DH");
-        keyPairGen.initialize(2048);
-        KeyPair keyPair = keyPairGen.generateKeyPair();
+    public static String receiveKey(Socket clientSocket) throws RuntimeException {
+        try {
+            DigitalSignature signature = new DigitalSignature();
 
-        // Initialize DH key agreement
-        KeyAgreement keyAgree = KeyAgreement.getInstance("DH");
-        keyAgree.init(keyPair.getPrivate());
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            JSONObject message = new JSONObject(in.readLine());
 
-        // Encode public DH key and send to Server
-        byte[] publicKeyEncoded = keyPair.getPublic().getEncoded();
-        String b64PublicKey = Cryptography.toBase64(publicKeyEncoded);
-        sendKey(clientSocket, b64PublicKey);
+            System.out.println("Received: \n" + message.toString(2));
 
-        // Receive the server's public DH key
-        String b64ServerKey = receiveKey(clientSocket);
-        byte[] serverKeyEncoded = Cryptography.fromBase64(b64ServerKey);
+            if (!signature.verifySignature(message)) {
+                throw new RuntimeException("Signature verification failed");
+            }
 
-        KeyFactory keyFac = KeyFactory.getInstance("DH");
-        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(serverKeyEncoded);
-        PublicKey serverKey = keyFac.generatePublic(x509KeySpec);
-        keyAgree.doPhase(serverKey, true);
+            return message.getString("pub_key");
+        } catch (IOException e) {
+            throw new RuntimeException("I/O error occurred");
+        } catch (JSONException e) {
+            throw new RuntimeException("Error creating JSON");
+        }
+    }
 
-        // Generate shared secret (same as the one generated by the server)
-        byte[] sharedSecret = keyAgree.generateSecret();
-        System.out.println("Shared Secret:\n" + Cryptography.toBase64(sharedSecret));
+    public static byte[] DHKeyExchange(Socket clientSocket) throws RuntimeException {
+        try {
+            // Create DH key pair
+            KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("DH");
+            keyPairGen.initialize(2048);
+            KeyPair keyPair = keyPairGen.generateKeyPair();
 
-        return sharedSecret;
+            // Initialize DH key agreement
+            KeyAgreement keyAgree = KeyAgreement.getInstance("DH");
+            keyAgree.init(keyPair.getPrivate());
+
+            // Encode public DH key and send to Server
+            byte[] publicKeyEncoded = keyPair.getPublic().getEncoded();
+            String b64PublicKey = Cryptography.toBase64(publicKeyEncoded);
+            sendKey(clientSocket, b64PublicKey);
+
+            // Receive the server's public DH key
+            String b64ServerKey = receiveKey(clientSocket);
+            byte[] serverKeyEncoded = Cryptography.fromBase64(b64ServerKey);
+
+            KeyFactory keyFac = KeyFactory.getInstance("DH");
+            X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(serverKeyEncoded);
+            PublicKey serverKey = keyFac.generatePublic(x509KeySpec);
+            keyAgree.doPhase(serverKey, true);
+
+            // Generate shared secret (same as the one generated by the server)
+            byte[] sharedSecret = keyAgree.generateSecret();
+            System.out.println("Shared Secret:\n" + Cryptography.toBase64(sharedSecret));
+
+            return sharedSecret;
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("No provider found for algorithm");
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException("Invalid key");
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException("Invalid key specification");
+        }
     }
 }

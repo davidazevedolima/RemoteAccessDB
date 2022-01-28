@@ -16,7 +16,7 @@ public class Cryptography {
 
             return toBase64(md);
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("No such algorithm in digest");
+            throw new RuntimeException("No such algorithm for message digest");
         }
     }
 
@@ -32,14 +32,18 @@ public class Cryptography {
         return Base64.getDecoder().decode(b64md);
     }
 
-    public static boolean verifyIntegrity(JSONObject message) throws JSONException {
-        String b64md = message.getString("digest");
-        message.remove("digest");
+    public static boolean verifyIntegrity(JSONObject message) {
+        try {
+            String b64md = message.getString("digest");
+            message.remove("digest");
 
-        byte[] md = decodeMessageDigest(b64md);
-        byte[] verifyMd = decodeMessageDigest(encodeMessageDigest(message.toString().getBytes()));
+            byte[] md = decodeMessageDigest(b64md);
+            byte[] verifyMd = decodeMessageDigest(encodeMessageDigest(message.toString().getBytes()));
 
-        return Arrays.equals(md, verifyMd);
+            return Arrays.equals(md, verifyMd);
+        } catch (JSONException e) {
+            throw new RuntimeException("No such mapping in JSON");
+        }
     }
 
     public static void verifySequence(long seq1, long seq2) throws RuntimeException {
