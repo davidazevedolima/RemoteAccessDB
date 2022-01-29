@@ -1,9 +1,8 @@
 package com.ISTGRoup32.RemoteAccessDocument.dao;
 
-import com.ISTGRoup32.RemoteAccessDocument.models.Document;
 
-import java.util.List;
+import java.io.IOException;
 
 public interface BackUpDao {
-    boolean getBackUp();
+    boolean getBackUp() throws IOException, InterruptedException;
 }
